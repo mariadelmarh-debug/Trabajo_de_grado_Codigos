@@ -1,0 +1,54 @@
+// CargadorDeArchivos.cs
+using UnityEngine;
+using System.IO;
+using TMPro;
+
+// Para SFB
+using SFB;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+public class CargadorDeArchivos : MonoBehaviour
+{
+    [Header("Referencias UI")]
+    public TMP_Text textoVisual;
+    public GameObject menuOculto;
+
+    [Header("Datos")]
+    public string rutaGuardada;
+
+    public void BuscarArchivo()
+    {
+#if UNITY_EDITOR
+        // Modo editor: usar OpenFilePanel (rápido y nativo del editor)
+        string ruta = EditorUtility.OpenFilePanel("Selecciona el script .py", "", "py");
+
+        if (!string.IsNullOrEmpty(ruta))
+        {
+            rutaGuardada = ruta;
+            textoVisual.text = Path.GetFileName(ruta);
+        }
+#else
+        // Modo Build: usar Standalone File Browser (SFB)
+        var extensiones = new[] {
+            new ExtensionFilter("Python Script", "py"),
+            new ExtensionFilter("Todos los archivos", "*" )
+        };
+
+        string[] rutas = StandaloneFileBrowser.OpenFilePanel("Selecciona el script .py", "", extensiones, false);
+
+        if (rutas != null && rutas.Length > 0)
+        {
+            rutaGuardada = rutas[0];
+            textoVisual.text = Path.GetFileName(rutaGuardada);
+        }
+#endif
+    }
+
+    public void MostrarMenuPython()
+    {
+        menuOculto.SetActive(!menuOculto.activeSelf);
+    }
+}

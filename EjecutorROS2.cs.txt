@@ -1,0 +1,69 @@
+// EjecutorROS2.cs
+using UnityEngine;
+using System.Diagnostics;
+using System.IO;
+using System.Collections;
+
+using Debug = UnityEngine.Debug;   // Evita conflicto con System.Diagnostics.Debug
+
+public class EjecutorROS2 : MonoBehaviour
+{
+    [Header("Referencia al cargador de archivos")]
+    public CargadorDeArchivos cargador;
+
+    [Header("Tiempo de espera antes del script Python")]
+    public float tiempoEspera = 4f;
+
+    public void EjecutarROS2ConArchivo()
+    {
+        StartCoroutine(Secuencia());
+    }
+
+    private IEnumerator Secuencia()
+    {
+        string rutaPython = cargador.rutaGuardada;
+
+        if (string.IsNullOrEmpty(rutaPython))
+        {
+            Debug.LogError("No hay archivo Python cargado.");
+            yield break;
+        }
+
+        if (!File.Exists(rutaPython))
+        {
+            Debug.LogError("El archivo no existe: " + rutaPython);
+            yield break;
+        }
+
+        // ---------------------------
+        // TERMINAL 1 — ROS2 SERVER
+        // ---------------------------
+        string comando1 = "cd ~/ros2_ws && source install/setup.bash && ros2 run fr_ros2 ros2_cmd_server";
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/usr/bin/gnome-terminal",
+            Arguments = $"-- bash -c \"{comando1}; exec bash\"",
+            UseShellExecute = false
+        });
+
+        Debug.Log("Esperando para que ROS2 se inicialice...");
+
+        // ESPERA
+        yield return new WaitForSeconds(tiempoEspera);
+
+        // ---------------------------
+        // TERMINAL 2 — ARCHIVO PYTHON
+        // ---------------------------
+        string comando2 = $"cd ~/ros2_ws && source install/setup.bash && python3 \"{rutaPython}\"";
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/usr/bin/gnome-terminal",
+            Arguments = $"-- bash -c \"{comando2}; exec bash\"",
+            UseShellExecute = false
+        });
+
+        Debug.Log("Ejecutando script Python.");
+    }
+}
